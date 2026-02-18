@@ -1,0 +1,76 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Budget {
+private:
+    double facultyBudget, universityBudget, administrationBudget;
+
+public:
+    Budget(double initialFacultyBudget) {
+        facultyBudget = initialFacultyBudget;
+        universityBudget = 0.0;
+        administrationBudget = 0.0;
+    }
+
+    double getFacultyBudget() const {
+        return facultyBudget;
+    }
+
+    double getUniversityBudget() const {
+        return universityBudget;
+    }
+
+    void addFacultyBudgetToUniversity() {
+        universityBudget += facultyBudget;
+    }
+
+    void addAdministrationBudget(double amount) {
+        administrationBudget += amount;
+        universityBudget += amount;
+    }
+
+    double getAdministrationBudget() const {
+        return administrationBudget;
+    }
+};
+
+int main() {
+    int numFaculties;
+    cout << "Въведете броя на факултетите: ";
+    cin >> numFaculties;
+
+    vector<Budget> faculties;
+
+    for (int i = 0; i < numFaculties; ++i) {
+        double facultyBudget;
+        cout << "Въведете бюджета на факултет " << (i + 1) << ": ";
+        cin >> facultyBudget;
+
+        faculties.emplace_back(facultyBudget);
+        faculties[i].addFacultyBudgetToUniversity();
+    }
+
+    double adminBudget;
+    cout << "Въведете бюджета на администрацията: ";
+    cin >> adminBudget;
+
+    for (auto &faculty : faculties) {
+        faculty.addAdministrationBudget(adminBudget);
+    }
+
+    cout << "Бюджет на администрацията: " << faculties[0].getAdministrationBudget() << endl;
+
+    for (int i = 0; i < numFaculties; ++i) {
+        cout << "Бюджет на факултет " << (i + 1) << ": " << faculties[i].getFacultyBudget() << endl;
+    }
+
+    double totalUniversityBudget = 0.0;
+    for (const auto &faculty : faculties) {
+        totalUniversityBudget += faculty.getUniversityBudget();
+    }
+    cout << "Общ бюджет на университета: " << totalUniversityBudget << endl;
+
+    return 0;
+}
