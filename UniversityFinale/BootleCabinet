@@ -1,0 +1,55 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+using namespace std;
+
+class Bottle {
+    double volume;
+public:
+    Bottle(double v = 0) : volume(v) {}
+    double getVolume() const { return volume; }
+};
+
+class Cabinet {
+    vector<Bottle> bottles;
+
+    bool canFill(int index, double remaining) const {
+        if (abs(remaining) < 1e-9) return true;
+        if (remaining < 0 || index == bottles.size()) return false;
+
+        return canFill(index + 1, remaining - bottles[index].getVolume()) ||
+               canFill(index + 1, remaining);
+    }
+
+public:
+    void addBottle(const Bottle& b) {
+        bottles.push_back(b);
+    }
+
+    bool hasCombinationForVolume(double target) const {
+        return canFill(0, target);
+    }
+};
+
+int main() {
+    int n;
+    cin >> n;
+
+    Cabinet cabinet;
+
+    for (int i = 0; i < n; i++) {
+        double v;
+        cin >> v;
+        cabinet.addBottle(Bottle(v));
+    }
+
+    double target;
+    cin >> target;
+
+    if (cabinet.hasCombinationForVolume(target))
+        cout << "YES";
+    else
+        cout << "NO";
+
+    return 0;
+}
