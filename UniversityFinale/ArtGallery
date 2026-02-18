@@ -1,0 +1,398 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <memory>
+#include <algorithm>
+#include <numeric>
+#include <limits>
+#include <fstream>
+#include <sstream>
+#include <cstdlib>
+
+using namespace std;
+
+enum MenuOption {
+    ADD_AUCTIONABLE_PAINTING = 1,
+    ADD_AUCTIONABLE_SCULPTURE,
+    ADD_REGULAR_PAINTING,
+    ADD_REGULAR_SCULPTURE,
+    DISPLAY_ALL,
+    LIST_ACTIVE_AUCTIONS,
+    SAVE_TO_FILE,
+    LOAD_FROM_FILE,
+    EXIT
+};
+
+class ArtPiece {
+protected:
+    string title, artist;
+    int year;
+
+public:
+    ArtPiece(const string &title, const string &artist, int year)
+        : title(title), artist(artist), year(year) {}
+
+    virtual ~ArtPiece() = default;
+
+    virtual void displayInfo() const = 0;
+    virtual string serialize() const = 0;
+
+    bool operator==(const ArtPiece &other) const {
+        return title == other.title && artist == other.artist;
+    }
+
+    friend ostream &operator<<(ostream &os, const ArtPiece &artPiece) {
+        os << "Title: " << artPiece.title << ", Artist: " << artPiece.artist << ", Year: " << artPiece.year;
+        return os;
+    }
+
+    int getYear() const { return year; }
+    const string &getTitle() const { return title; }
+    const string &getArtist() const { return artist; }
+};
+
+class Painting : public ArtPiece {
+private:
+    string medium;
+    double height, width;
+
+public:
+    Painting(const string &title, const string &artist, int year, const string &medium, double height, double width)
+        : ArtPiece(title, artist, year), medium(medium), height(height), width(width) {}
+
+    void displayInfo() const override {
+        cout << *this << ", Medium: " << medium << ", Height: " << height << ", Width: " << width << endl;
+    }
+
+    string serialize() const override {
+        return "P;" + title + ";" + artist + ";" + to_string(year) + ";" + medium + ";" + to_string(height) + ";" + to_string(width);
+    }
+};
+
+class Sculpture : public ArtPiece {
+private:
+    string material;
+    double weight;
+
+public:
+    Sculpture(const string &title, const string &artist, int year, const string &material, double weight)
+        : ArtPiece(title, artist, year), material(material), weight(weight) {}
+
+    void displayInfo() const override {
+        cout << *this << ", Material: " << material << ", Weight: " << weight << endl;
+    }
+
+    string serialize() const override {
+        return "S;" + title + ";" + artist + ";" + to_string(year) + ";" + material + ";" + to_string(weight);
+    }
+};
+
+class Auctionable {
+public:
+    virtual void placeBid(double bid) = 0;
+    virtual double getHighestBid() const = 0;
+    virtual int getRemainingBids() const = 0;
+    virtual bool isAuctionActive() const = 0;
+    virtual ~Auctionable() = default;
+};
+
+class AuctionablePainting : public Painting, public Auctionable {
+private:
+    double highestBid;
+    int maxBids, currentBids;
+
+public:
+    AuctionablePainting(const string &title, const string &artist, int year, const string &medium,
+                        double height, double width, int maxBids)
+        : Painting(title, artist, year, medium, height, width), highestBid(0), maxBids(maxBids), currentBids(0) {}
+
+    void placeBid(double bid) override {
+        if (!isAuctionActive()) {
+            cout << "Auction has ended. Cannot place new bids." << endl;
+            return;
+        }
+        if (bid > highestBid) {
+            highestBid = bid;
+            currentBids++;
+            cout << "Bid of " << bid << " accepted. Current highest bid: " << highestBid << endl;
+        } else {
+            cout << "Bid too low. Current highest bid is " << highestBid << endl;
+        }
+    }
+
+    double getHighestBid() const override { return highestBid; }
+    int getRemainingBids() const override { return maxBids - currentBids; }
+    bool isAuctionActive() const override { return currentBids < maxBids; }
+
+    void displayInfo() const override {
+        Painting::displayInfo();
+        cout << "Auction Status: " << (isAuctionActive() ? "Active" : "Ended")
+             << ", Highest Bid: " << highestBid
+             << ", Remaining Bids: " << getRemainingBids() << endl;
+    }
+
+    string serialize() const override {
+        return "A;" + Painting::serialize() + ";" + to_string(highestBid) + ";" + to_string(maxBids) + ";" + to_string(currentBids);
+    }
+};
+
+class AuctionableSculpture : public Sculpture, public Auctionable {
+private:
+    double highestBid;
+    int maxBids, currentBids;
+
+public:
+    AuctionableSculpture(const string &title, const string &artist, int year, const string &material,
+                         double weight, int maxBids)
+        : Sculpture(title, artist, year, material, weight), highestBid(0), maxBids(maxBids), currentBids(0) {}
+
+    void placeBid(double bid) override {
+        if (!isAuctionActive()) {
+            cout << "Auction has ended. Cannot place new bids." << endl;
+            return;
+        }
+        if (bid > highestBid) {
+            highestBid = bid;
+            currentBids++;
+            cout << "Bid of " << bid << " accepted. Current highest bid: " << highestBid << endl;
+        } else {
+            cout << "Bid too low. Current highest bid is " << highestBid << endl;
+        }
+    }
+
+    double getHighestBid() const override { return highestBid; }
+    int getRemainingBids() const override { return maxBids - currentBids; }
+    bool isAuctionActive() const override { return currentBids < maxBids; }
+
+    void displayInfo() const override {
+        Sculpture::displayInfo();
+        cout << "Auction Status: " << (isAuctionActive() ? "Active" : "Ended")
+             << ", Highest Bid: " << highestBid
+             << ", Remaining Bids: " << getRemainingBids() << endl;
+    }
+
+    string serialize() const override {
+        return "B;" + Sculpture::serialize() + ";" + to_string(highestBid) + ";" + to_string(maxBids) + ";" + to_string(currentBids);
+    }
+};
+
+class Gallery {
+private:
+    vector<shared_ptr<ArtPiece>> collection;
+
+public:
+    void addArtPiece(const shared_ptr<ArtPiece>& artPiece) {
+        collection.push_back(artPiece);
+    }
+
+    void displayAll() const {
+        for (const auto& piece : collection) {
+            piece->displayInfo();
+        }
+    }
+
+    void listActiveAuctions() const {
+        for (const auto& piece : collection) {
+            if (auto auctionable = dynamic_cast<Auctionable*>(piece.get())) {
+                if (auctionable->isAuctionActive()) {
+                    piece->displayInfo();
+                }
+            }
+        }
+    }
+
+    void saveToFile(const string &filename) const {
+        ofstream outFile(filename);
+        if (!outFile) {
+            cerr << "Error opening file for writing." << endl;
+            return;
+        }
+
+        for (const auto& piece : collection) {
+            outFile << piece->serialize() << endl;
+        }
+        outFile.close();
+        cout << "Data saved to " << filename << endl;
+    }
+
+    void loadFromFile(const string &filename) {
+        ifstream inFile(filename);
+        if (!inFile) {
+            cerr << "Error opening file for reading." << endl;
+            return;
+        }
+
+        string line;
+        while (getline(inFile, line)) {
+            char type = line[0];
+            string data = line.substr(2);
+            if (type == 'P') {
+                auto parts = splitData(data);
+                addArtPiece(make_shared<Painting>(parts[0], parts[1], stoi(parts[2]), parts[3], stod(parts[4]), stod(parts[5])));
+            } else if (type == 'S') {
+                auto parts = splitData(data);
+                addArtPiece(make_shared<Sculpture>(parts[0], parts[1], stoi(parts[2]), parts[3], stod(parts[4])));
+            } else if (type == 'A') {
+                auto parts = splitData(data.substr(0, data.rfind(";")));
+                istringstream stream(data);
+                string highestBidStr, maxBidsStr, currentBidsStr;
+
+                getline(stream, highestBidStr, ';');
+                getline(stream, maxBidsStr, ';');
+                getline(stream, currentBidsStr, ';');
+
+                auto painting = make_shared<AuctionablePainting>(parts[0], parts[1], stoi(parts[2]), parts[3], stod(parts[4]), stod(parts[5]), stoi(maxBidsStr));
+                painting->placeBid(stod(highestBidStr));
+                addArtPiece(painting);
+            } else if (type == 'B') {
+                auto parts = splitData(data.substr(0, data.rfind(";")));
+                istringstream stream(data);
+                string highestBidStr, maxBidsStr, currentBidsStr;
+
+                getline(stream, highestBidStr, ';');
+                getline(stream, maxBidsStr, ';');
+                getline(stream, currentBidsStr, ';');
+
+                auto sculpture = make_shared<AuctionableSculpture>(parts[0], parts[1], stoi(parts[2]), parts[3], stod(parts[4]), stoi(maxBidsStr));
+                sculpture->placeBid(stod(highestBidStr));
+                addArtPiece(sculpture);
+            }
+        }
+        inFile.close();
+        cout << "Data loaded from " << filename << endl;
+    }
+
+    vector<string> splitData(const string &data) const {
+        vector<string> parts;
+        size_t pos = 0, found;
+        while ((found = data.find_first_of(';', pos)) != string::npos) {
+            parts.push_back(data.substr(pos, found - pos));
+            pos = found + 1;
+        }
+        parts.push_back(data.substr(pos));
+        return parts;
+    }
+};
+
+void displayMenu() {
+    cout << "Menu:\n";
+    cout << "1. Add Auctionable Painting\n";
+    cout << "2. Add Auctionable Sculpture\n";
+    cout << "3. Add Regular Painting\n";
+    cout << "4. Add Regular Sculpture\n";
+    cout << "5. Display All Art Pieces\n";
+    cout << "6. List Active Auctions\n";
+    cout << "7. Save to File\n";
+    cout << "8. Load from File\n";
+    cout << "9. Exit\n";
+}
+
+int getIntInput(const string &prompt) {
+    int value;
+    cout << prompt;
+    while (!(cin >> value)) {
+        cout << "Invalid input. Please enter a number: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+    return value;
+}
+
+double getDoubleInput(const string &prompt) {
+    double value;
+    cout << prompt;
+    while (!(cin >> value)) {
+        cout << "Invalid input. Please enter a number: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+    return value;
+}
+
+string getStringInput(const string &prompt) {
+    string value;
+    cout << prompt;
+    cin.ignore();
+    getline(cin, value);
+    return value;
+}
+
+shared_ptr<ArtPiece> createArtPiece(int choice) {
+    string title, artist, medium, material;
+    int year, maxBids;
+    double height, width, weight;
+
+    switch (choice) {
+    case ADD_AUCTIONABLE_PAINTING:
+        title = getStringInput("Enter Title: ");
+        artist = getStringInput("Enter Artist: ");
+        year = getIntInput("Enter Year: ");
+        medium = getStringInput("Enter Medium: ");
+        height = getDoubleInput("Enter Height: ");
+        width = getDoubleInput("Enter Width: ");
+        maxBids = getIntInput("Enter Max Bids: ");
+        return make_shared<AuctionablePainting>(title, artist, year, medium, height, width, maxBids);
+    case ADD_AUCTIONABLE_SCULPTURE:
+        title = getStringInput("Enter Title: ");
+        artist = getStringInput("Enter Artist: ");
+        year = getIntInput("Enter Year: ");
+        material = getStringInput("Enter Material: ");
+        weight = getDoubleInput("Enter Weight: ");
+        maxBids = getIntInput("Enter Max Bids: ");
+        return make_shared<AuctionableSculpture>(title, artist, year, material, weight, maxBids);
+    case ADD_REGULAR_PAINTING:
+        title = getStringInput("Enter Title: ");
+        artist = getStringInput("Enter Artist: ");
+        year = getIntInput("Enter Year: ");
+        medium = getStringInput("Enter Medium: ");
+        height = getDoubleInput("Enter Height: ");
+        width = getDoubleInput("Enter Width: ");
+        return make_shared<Painting>(title, artist, year, medium, height, width);
+    case ADD_REGULAR_SCULPTURE:
+        title = getStringInput("Enter Title: ");
+        artist = getStringInput("Enter Artist: ");
+        year = getIntInput("Enter Year: ");
+        material = getStringInput("Enter Material: ");
+        weight = getDoubleInput("Enter Weight: ");
+        return make_shared<Sculpture>(title, artist, year, material, weight);
+    default:
+        return nullptr;
+    }
+}
+
+Gallery gallery; // Global or static gallery object
+const string filename = "PaintingsAndSculptures.txt"; // Global filename variable
+
+void saveGalleryOnExit() {
+    gallery.saveToFile(filename);
+}
+
+int main() {
+    atexit(saveGalleryOnExit); // Register the save function to be called on exit
+
+    gallery.loadFromFile(filename);
+
+    int choice;
+    do {
+        displayMenu();
+        choice = getIntInput("Enter your choice: ");
+
+        if (choice >= ADD_AUCTIONABLE_PAINTING && choice <= ADD_REGULAR_SCULPTURE) {
+            auto artPiece = createArtPiece(choice);
+            gallery.addArtPiece(artPiece);
+            cout << "Art Piece added successfully!\n";
+        } else if (choice == DISPLAY_ALL) {
+            cout << "\nAll Art Pieces:\n";
+            gallery.displayAll();
+        } else if (choice == LIST_ACTIVE_AUCTIONS) {
+            cout << "\nActive Auctions:\n";
+            gallery.listActiveAuctions();
+        } else if (choice == SAVE_TO_FILE) {
+            gallery.saveToFile(filename);
+        } else if (choice == LOAD_FROM_FILE) {
+            gallery.loadFromFile(filename);
+        }
+    } while (choice != EXIT);
+
+    return 0;
+}
