@@ -1,0 +1,160 @@
+#include <iostream>
+#include <numeric>
+#include <stdexcept>
+#include <iomanip>
+
+using namespace std;
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+class Rat {
+private:
+    int numerator, denominator;
+
+    void simplify() {
+        int divisor = gcd(abs(numerator), abs(denominator));
+        numerator /= divisor;
+        denominator /= divisor;
+        if (denominator < 0) {
+            numerator = -numerator;
+            denominator = -denominator;
+        }
+    }
+
+public:
+    Rat(int a = 0, int b = 1) : numerator(a), denominator(b) {
+        if (b == 0) throw invalid_argument("Denominator cannot be zero.");
+        simplify();
+    }
+
+    int getNumerator() const { return numerator; }
+    int getDenominator() const { return denominator; }
+
+    void display() const {
+        cout << numerator << "/" << denominator;
+    }
+
+    operator double() const {
+        return static_cast<double>(numerator) / denominator;
+    }
+
+    Rat operator+(const Rat& other) const {
+        return Rat(numerator * other.denominator + other.numerator * denominator, denominator * other.denominator);
+    }
+
+    Rat operator-(const Rat& other) const {
+        return Rat(numerator * other.denominator - other.numerator * denominator, denominator * other.denominator);
+    }
+
+    Rat operator*(const Rat& other) const {
+        return Rat(numerator * other.numerator, denominator * other.denominator);
+    }
+
+    Rat operator/(const Rat& other) const {
+        if (other.numerator == 0) throw invalid_argument("Division by zero.");
+        return Rat(numerator * other.denominator, denominator * other.numerator);
+    }
+
+    friend Rat operator+(const Rat& r, int i) {
+        return Rat(r.numerator + i * r.denominator, r.denominator);
+    }
+
+    friend Rat operator-(const Rat& r, int i) {
+        return Rat(r.numerator - i * r.denominator, r.denominator);
+    }
+
+    friend Rat operator*(const Rat& r, int i) {
+        return Rat(r.numerator * i, r.denominator);
+    }
+
+    friend Rat operator/(const Rat& r, int i) {
+        if (i == 0) throw invalid_argument("Division by zero.");
+        return Rat(r.numerator, r.denominator * i);
+    }
+
+    friend Rat operator+(int i, const Rat& r) {
+        return Rat(i * r.denominator + r.numerator, r.denominator);
+    }
+
+    friend Rat operator-(int i, const Rat& r) {
+        return Rat(i * r.denominator - r.numerator, r.denominator);
+    }
+
+    friend Rat operator*(int i, const Rat& r) {
+        return Rat(i * r.numerator, r.denominator);
+    }
+
+    friend Rat operator/(int i, const Rat& r) {
+        if (r.numerator == 0) throw invalid_argument("Division by zero.");
+        return Rat(i * r.denominator, r.numerator);
+    }
+};
+
+int main() {
+    int a, b, c, d;
+
+    cout << "Enter the numerator and denominator of the first rational number (a, b): ";
+    cin >> a >> b;
+    Rat rat1(a, b);
+
+    cout << "Enter the numerator and denominator of the second rational number (c, d): ";
+    cin >> c >> d;
+    Rat rat2(c, d);
+
+    int wholeNumber;
+    cout << "Enter a non-zero integer: ";
+    cin >> wholeNumber;
+
+    cout << fixed << setprecision(6);
+    cout << "Results:" << endl;
+
+    Rat operations[] = {rat1 + rat2, rat1 - rat2, rat1 * rat2, rat1 / rat2};
+    const char* opSymbols[] = {"+", "-", "*", "/"};
+
+    for (int i = 0; i < 4; i++) {
+        cout << "Result of " << rat1.getNumerator() << "/" << rat1.getDenominator()
+             << " " << opSymbols[i] << " " << rat2.getNumerator() << "/" << rat2.getDenominator()
+             << " = ";
+        operations[i].display();
+        cout << " = " << static_cast<double>(operations[i]) << endl;
+    }
+
+    Rat operationsWithWhole[] = {
+        rat1 + wholeNumber,
+        rat1 - wholeNumber,
+        rat1 * wholeNumber,
+        rat1 / wholeNumber
+    };
+
+    const char* labels[] = {
+        "Sum with integer: ",
+        "Difference with integer: ",
+        "Product with integer: ",
+        "Quotient with integer: "
+    };
+
+    for (int i = 0; i < 4; i++) {
+        cout << labels[i];
+        operationsWithWhole[i].display();
+        cout << " = " << static_cast<double>(operationsWithWhole[i]) << endl;
+    }
+
+    Rat integerOperations[] = {
+        wholeNumber + rat2,
+        wholeNumber - rat2,
+        wholeNumber * rat2,
+        wholeNumber / rat2
+    };
+
+    for (int i = 0; i < 4; i++) {
+        cout << wholeNumber << " " << opSymbols[i] << " ";
+        rat2.display();
+        cout << " = ";
+        integerOperations[i].display();
+        cout << " = " << static_cast<double>(integerOperations[i]) << endl;
+    }
+
+    return 0;
+}
