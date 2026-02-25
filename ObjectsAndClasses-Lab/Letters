@@ -1,0 +1,79 @@
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <cctype>
+
+using namespace std;
+
+class Letters {
+private:
+    set<string> words;
+
+public:
+    Letters(istream &iss) {
+        string line;
+        getline(iss, line);
+
+        string current;
+
+        for (char c : line) {
+            if (isalpha(c)) {
+                current += c;
+            } else {
+                if (!current.empty()) {
+                    words.insert(current);
+                    current.clear();
+                }
+            }
+        }
+
+        if (!current.empty()) {
+            words.insert(current);
+        }
+    }
+
+    string getAll(char c) {
+        string result;
+        bool found = false;
+
+        c = tolower(c);
+
+        for (const string &word : words) {
+            for (char ch : word) {
+                if (tolower(ch) == c) {
+                    result += word + " ";
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found) return "";
+        return result;
+    }
+};
+
+int main() {
+    Letters letters(cin);
+
+    string input;
+
+    while (true) {
+        getline(cin, input);
+
+        if (input == ".") break;
+
+        char c = input[0];
+
+        string result = letters.getAll(c);
+
+        if (result.empty())
+            cout << "---";
+        else
+            cout << result;
+
+        cout << endl;
+    }
+
+    return 0;
+}
