@@ -1,0 +1,84 @@
+#include <iostream>
+#include <vector>
+#include <map>
+#include <sstream>
+
+using namespace std;
+
+class MatchingLocations {
+private:
+    struct Location {
+        string name;
+        string latStr;
+        string lonStr;
+        double lat;
+        double lon;
+    };
+
+    vector<Location> locations;
+    map<string, Location> byName;
+
+    Location parseLocation(string line) {
+        Location loc;
+        stringstream ss(line);
+
+        getline(ss, loc.name, ',');
+        getline(ss, loc.latStr, ',');
+        getline(ss, loc.lonStr);
+
+        loc.lat = stod(loc.latStr);
+        loc.lon = stod(loc.lonStr);
+
+        return loc;
+    }
+
+public:
+    void readLocations() {
+        string line;
+
+        while (getline(cin, line)) {
+            if (line == ".") break;
+
+            Location loc = parseLocation(line);
+            locations.push_back(loc);
+            byName[loc.name] = loc;
+        }
+    }
+
+    void processQueries() {
+        string line;
+
+        while (getline(cin, line)) {
+            if (line == ".") break;
+
+            // заявка по име
+            if (byName.count(line)) {
+                Location loc = byName[line];
+                cout << loc.name << "," 
+                     << loc.latStr << "," 
+                     << loc.lonStr << endl;
+            }
+            else {
+                // заявка по координати
+                stringstream ss(line);
+                double qLat, qLon;
+                ss >> qLat >> qLon;
+
+                for (const auto &loc : locations) {
+                    if (loc.lat == qLat && loc.lon == qLon) {
+                        cout << loc.name << "," 
+                             << loc.latStr << "," 
+                             << loc.lonStr << endl;
+                    }
+                }
+            }
+        }
+    }
+};
+
+int main() {
+    MatchingLocations ml;
+    ml.readLocations();
+    ml.processQueries();
+    return 0;
+}
