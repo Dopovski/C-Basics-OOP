@@ -1,0 +1,79 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Student {
+    string name;
+    string surname;
+    double average;
+
+public:
+    Student() : average(0) {}
+
+    Student(string n, string s, double a) {
+        name = n;
+        surname = s;
+        average = a;
+    }
+
+    double getAverage() const {
+        return average;
+    }
+
+    void print() const {
+        cout << name << " " << surname << " " << average << endl;
+    }
+};
+
+double calculateTotalAverage(const vector<Student>& students) {
+    if (students.empty()) {
+        return -1;
+    }
+
+    double sum = 0;
+    for (const Student& s : students) {
+        sum += s.getAverage();
+    }
+
+    return sum / students.size();
+}
+
+int main() {
+    int n;
+    cin >> n;
+    cin.ignore();
+
+    if (n <= 0) {
+        cout << "Invalid input" << endl;
+        return 0;
+    }
+
+    vector<Student> students;
+
+    while (n--) {
+        string name, surname;
+        double average;
+
+        getline(cin, name);
+        getline(cin, surname);
+        cin >> average;
+        cin.ignore();
+
+        students.push_back(Student(name, surname, average));
+    }
+
+    for (const Student& s : students) {
+        s.print();
+    }
+
+    double totalAverage = calculateTotalAverage(students);
+
+    if (totalAverage < 0) {
+        cout << "Invalid input" << endl;
+    } else {
+        cout << totalAverage << endl;
+    }
+
+    return 0;
+}
