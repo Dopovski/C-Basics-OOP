@@ -1,0 +1,66 @@
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <map>
+
+using namespace std;
+
+class Sale {
+    string city;
+    string product;
+    double price;
+    double quantity;
+
+public:
+    Sale() : price(0), quantity(0) {}
+
+    Sale(istream& is) {
+        is >> city >> product >> price >> quantity;
+    }
+
+    double getSales() const {
+        return price * quantity;
+    }
+
+    const string& getCity() const {
+        return city;
+    }
+};
+
+class Sales {
+    vector<Sale> sales;
+
+public:
+    Sales(istream& is) {
+        int n;
+        is >> n;
+        is.ignore();
+
+        while (n--) {
+            string line;
+            getline(is, line);
+            istringstream ss(line);
+            sales.push_back(Sale(ss));
+        }
+    }
+
+    void printReport() {
+        map<string, double> salesByCity;
+
+        for (const Sale& s : sales) {
+            salesByCity[s.getCity()] += s.getSales();
+        }
+
+        for (auto it = salesByCity.begin(); it != salesByCity.end(); ++it) {
+            cout.setf(ios::fixed);
+            cout.precision(2);
+            cout << it->first << " -> " << it->second << endl;
+        }
+    }
+};
+
+int main() {
+    Sales s(cin);
+    s.printReport();
+    return 0;
+}
