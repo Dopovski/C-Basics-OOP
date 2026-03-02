@@ -1,0 +1,37 @@
+#include <iostream>
+#include <sstream>
+#include <cmath>
+#include <iomanip>
+
+using namespace std;
+
+class Point {
+    int x, y;
+
+public:
+    Point() : x(0), y(0) {}
+
+    Point(int x, int y) : x(x), y(y){}
+
+    Point (istream & in) {
+        in >> x >> y;
+    }
+
+    double formula(Point & p) {
+        double res;
+        res = sqrt((this->x - p.x) * (this->x - p.x) + (this->y - p.y) * (this->y - p.y));
+        return res;
+
+    }
+
+};
+
+int main(){
+    Point p(cin), q(cin);
+
+
+    cout.setf(ios::fixed);
+    cout.precision(3);
+
+    cout << p.formula(q) << endl;
+}
