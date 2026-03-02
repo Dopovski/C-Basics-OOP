@@ -1,0 +1,48 @@
+#include <iostream>
+#include <sstream>
+#include <queue>
+
+using namespace std;
+
+class SentanceShifter {
+    int shiftTimes;
+
+    deque <string> data;
+public:
+    void innit(istream & in) {
+
+        string line;
+        getline(in, line);
+        in >> shiftTimes;
+
+        istringstream iss(line);
+        while (iss >> line) {
+            data.push_back(line);
+
+        }
+
+
+    }
+    string getShifted() {
+        for (int i = 0 ; i < shiftTimes ; i++) {
+            data.push_front(data.back());
+            data.pop_back();
+        }
+        ostringstream oss;
+        for (const string str : data) {
+            oss << str << endl;
+        }
+        return oss.str();
+
+    };
+
+};
+
+int main() {
+
+    SentanceShifter cc;
+
+    cc.innit(cin);
+    cout << cc.getShifted() << endl;
+
+}
