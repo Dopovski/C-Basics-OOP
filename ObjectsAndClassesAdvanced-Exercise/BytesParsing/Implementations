@@ -1,0 +1,76 @@
+#include "Defines.h"
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstring>
+
+using namespace std;
+
+ErrorCode parseData(const string &        commands,
+                    const char *          rawDataBytes,
+                    const size_t          rawDataBytesCount,
+                    vector<long long> &   outParsedNumbers)
+{
+    if (commands.empty() || rawDataBytesCount == 0) {
+        return PARSE_EMPTY;
+    }
+
+    size_t byteOffset = 0;
+
+    for (size_t i = 0; i < commands.size(); ++i) {
+        char cmd = commands[i];
+
+        size_t typeSize = 0;
+        if      (cmd == 's') typeSize = sizeof(short);
+        else if (cmd == 'i') typeSize = sizeof(int);
+        else if (cmd == 'l') typeSize = sizeof(long long);
+        else continue; // unknown command, skip
+
+        // Not enough bytes left for this type
+        if (byteOffset + typeSize > rawDataBytesCount) {
+            return PARSE_FAILURE;
+        }
+
+        long long value = 0;
+        // Little-endian: byte at byteOffset is least significant
+        for (size_t b = 0; b < typeSize; ++b) {
+            long long byteVal = (unsigned char)rawDataBytes[byteOffset + b];
+            value |= (byteVal << (8 * b));
+        }
+
+        // Sign-extend for short and int
+        if (cmd == 's') {
+            short s;
+            memcpy(&s, &value, sizeof(short));
+            value = s;
+        } else if (cmd == 'i') {
+            int iv;
+            memcpy(&iv, &value, sizeof(int));
+            value = iv;
+        }
+
+        outParsedNumbers.push_back(value);
+        byteOffset += typeSize;
+    }
+
+    return PARSE_SUCCESS;
+}
+
+void printResult(const ErrorCode               errorCode,
+                 const vector<long long> &     parsedNumbers)
+{
+    if (errorCode == PARSE_EMPTY) {
+        cout << "No input provided\n";
+        return;
+    }
+
+    for (size_t i = 0; i < parsedNumbers.size(); ++i) {
+        cout << parsedNumbers[i] << " ";
+    }
+
+    if (errorCode == PARSE_FAILURE) {
+        cout << "Warning, buffer underflow detected";
+    }
+
+    cout << "\n";
+}
