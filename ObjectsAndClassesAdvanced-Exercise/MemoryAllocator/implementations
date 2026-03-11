@@ -1,0 +1,62 @@
+#include "Defines.h"
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+
+using namespace std;
+
+ErrorCode executeCommand(const string & command, vector<int *> & memory) {
+    istringstream iss(command);
+    string action;
+    iss >> action;
+
+    if (action == "Idle") {
+        return EXECUTE_IDLE;
+    }
+
+    int index;
+    iss >> index;
+
+    if (index < 0 || index >= (int)memory.size()) {
+        return INDEX_OUT_OF_BOUND;
+    }
+
+    if (action == "Allocate") {
+        if (memory[index] != nullptr) {
+            return MEMORY_LEAK;
+        }
+        memory[index] = new int(0);
+        return EXECUTE_SUCCESS;
+    }
+    else if (action == "Deallocate") {
+        if (memory[index] == nullptr) {
+            return DOUBLE_FREE;
+        }
+        delete memory[index];
+        memory[index] = nullptr;
+        return EXECUTE_SUCCESS;
+    }
+
+    return EXECUTE_IDLE;
+}
+
+void printResult(const ErrorCode errorCode, const string & command) {
+    switch (errorCode) {
+        case EXECUTE_SUCCESS:
+            cout << command << " - success\n";
+            break;
+        case EXECUTE_IDLE:
+            cout << command << " - this exam is a piece of cake! Where is the OOP already?!?\n";
+            break;
+        case MEMORY_LEAK:
+            cout << command << " - memory leak prevented, will not make allocation\n";
+            break;
+        case DOUBLE_FREE:
+            cout << command << " - system crash prevented, will skip this deallocation\n";
+            break;
+        case INDEX_OUT_OF_BOUND:
+            cout << command << " - out of bound\n";
+            break;
+    }
+}
