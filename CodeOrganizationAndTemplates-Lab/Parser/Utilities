@@ -1,0 +1,15 @@
+#ifndef CODEORGANIZATIONANDTEMPLATES_LAB_PRINTUTILS_H
+#define CODEORGANIZATIONANDTEMPLATES_LAB_PRINTUTILS_H
+
+#include <vector>
+#include <iostream>
+
+template<typename T>
+void printVector(const std::vector<T>& v) {
+    for (const T & element : v) {
+        std::cout << element << " ";
+        std::cout << std::endl;
+    }
+}
+
+#endif
