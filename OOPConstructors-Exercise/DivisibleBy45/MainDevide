@@ -1,0 +1,44 @@
+#include <iostream>
+#include <string>
+#include "BigInt.h"
+ 
+using namespace std;
+ 
+bool isDivisibleBy5(const BigInt& num) {
+    string digits = num.getDigits();
+    char lastDigit = digits[digits.length() - 1];
+    return lastDigit == '0' || lastDigit == '5';
+}
+ 
+bool isDivisibleBy9(const BigInt& num) {
+    string digits = num.getDigits();
+    size_t sumDigit = 0;
+    for (char c : digits) {
+        sumDigit += (c - '0');
+    }
+    return (sumDigit % 9) == 0;
+}
+ 
+bool isDivisibleBy45(const BigInt& num) {
+    return isDivisibleBy5(num) && isDivisibleBy9(num);
+}
+ 
+int main() {
+    string s, e;
+    getline(cin, s);
+    getline(cin, e);
+    BigInt from(s), to(e);
+ 
+    BigInt step(45);
+ 
+    while (from < to && !isDivisibleBy45(from)) {
+        from += 1;
+    }
+ 
+    while (from < to) {
+        cout << from << "\n";
+        from += step;
+    }
+ 
+    return 0;
+}
