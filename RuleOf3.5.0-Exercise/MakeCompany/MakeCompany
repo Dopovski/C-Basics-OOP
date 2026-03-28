@@ -1,0 +1,18 @@
+#pragma once
+
+#include <memory>
+#include <vector>
+#include <string>
+#include "Company.h"
+
+std::shared_ptr<Company> makeCompany(const std::vector<std::string>& props) {
+    int id = std::stoi(props[0]);
+    std::string name = props[1];
+    std::vector<std::pair<char, char>> employees;
+
+    for (size_t curEle = 2; curEle < props.size(); curEle++) {
+        employees.push_back(std::pair<char, char>(props[curEle][0], props[curEle][1]));
+    }
+
+    return std::shared_ptr<Company>(new Company(id, name, employees));
+}
